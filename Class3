@@ -1,0 +1,29 @@
+###           Class 3
+
+tabla1 <- read.table("C:/Users/USUARIO/Downloads/tabla1.txt", header = F)   # header no hay nombres solo columnas
+tabla2 <- read.table("https://www.nrc.gov/reading-rm/doc-collections/event-status/reactor-status/PowerReactorStatusForLast365Days.txt", header = T, sep = "|")
+tabla3 <- read.table("C:/Users/USUARIO/Downloads/tabla3.txt", header = F, sep = "/", strip.white = T, na.strings = "VACIO")
+tabla4 <- read.csv("C:/Users/USUARIO/Downloads/tabla4.csv", header = T, quote = "\"", stringsAsFactors = T, strip.white = T) # strip.white elimina los espacios en blancos
+table5 <- read.csv2("C:/Users/USUARIO/Downloads/tabla5.csv2", header = F, quote = "\"", row.names = c("M", "N", "O", "P", "Q"), col.names = c("X", "Y", "Z", "A", "B"), fill = T, strip.white = T, stringsAsFactors = T)
+
+install.packages("XLConnect")
+library(XLConnect)
+
+climate <- readWorksheetFromFile("C:/Users/USUARIO/Downloads/climate.xlsx", sheet=1)
+View(climate)
+
+climate2 <- readWorksheetFromFile("C:/Users/USUARIO/Downloads/climate.xlsx", sheet=1, startRow=26, endCol=4)
+View(climate2)
+
+climate3 <- readWorksheetFromFile("C:/Users/USUARIO/Downloads/climate.xlsx", sheet=1, region= "A1:G13")
+View(climate3)
+
+wb <- loadWorkbook("C:/Users/USUARIO/Downloads/PortfoliobyLoanStatus.xls")
+
+direcLoan <- readWorksheetFromFile(wb, sheet = 1, startRow = 6)
+direcLoan <- readWorksheet(wb, sheet = 1, startRow = 6)
+
+install.packages("xlsx")
+library(xlsx)
+
+climate4 <- read.xlsx("C:/Users/USUARIO/Downloads/PortfoliobyLoanStatus.xls", sheetIndex = 1)
