@@ -1,0 +1,67 @@
+```{r}
+#   Es saturado si la fn tiene igual de variables como parametros
+
+###     EJEMPLOS  
+#   setwd("~")  Donde se encuentra el archivo de trabajo
+x11(width = 7, height = 6, pointsize = 12)
+#   Ejemplo de graficacion de curve
+curve(expr = x^2, xlim = c(-1,2), col = "darkred", main = "Grafica de f(x) = x^2", xlab = "x", ylab = "f(x)", panel.first = grid(col = "gray", lty = "dotted"))
+
+#   Grafica para un Modelo de regresión logistica
+x11(width = 7, height = 6, pointsize = 12)
+par(mfrow = c(1,2))
+
+beta0 <- 1
+beta1 <- 0.5
+curve(expr = exp(beta0 + beta1 * x) / (1 + exp(beta0 + beta1 * x)), xlim = c(-15,15), col = "black", main = expression(pi == frac(e^{1 + 0.5*x[1]}, e^{1 + 0.5*x[1]})), xlab = expression(x[1]), ylab = expression(pi))
+
+beta0 <- 1
+beta1 <- -0.5
+curve(expr = exp(beta0 + beta1 * x) / (1 + exp(beta0 + beta1 * x)), xlim = c(-15,15), col = "black", main = expression(pi == frac(e^{1 + 0.5*x[1]}, e^{1 + 0.5*x[1]})), xlab = expression(x[1]), ylab = expression(pi))
+```
+
+
+```{r}
+
+placekick <- read.table(file ="C:/Users/USUARIO/Downloads/Placekick.csv", header = T, sep = ",")
+View(placekick)
+tail(placekick)
+
+mod.fit <- glm( formula = good ~ distance , family = binomial(link = logit), data = placekick)  #    Modelo ajustado, Modelo de regresion generalizado (glm), good - var dep. y distance - var indep.
+
+mod.fit
+names(mod.fit)
+
+mod.fit$coefficients 
+class(mod.fit)
+
+methods(class = glm) #    Modelo Lineal Generalizado
+methods(class = lm)  #    Modelo Lineal
+
+mod.fit2 <- glm( formula = good ~ distance + change , family = binomial(link = logit), data = placekick)
+mod.fit2$coefficients
+
+temp <- summary(mod.fit)
+names(temp)
+
+temp$coefficients
+
+##    Obtencion de la matriz de covarianza
+vcov(mod.fit)
+##    Estimado para beta1
+vcov(mod.fit)[2,2]
+
+##    Maximizar el logaritmo de la funcion es maximar la fn de verosimilitud
+##    Funcion de , log-verosimilitud
+logL <- function(beta,x,Y){
+  pi <- exp(beta[1] + beta[2]*x)/ (1 + exp(beta[1] + beta[2]*x))
+  #   Alternative , could use exp(X%*%beta)/(1 + exp(X%*%beta)) # where X ir the desing matrix
+  sum(Y*log(pi) + (1-Y)*log(1-pi))
+}
+
+logL(beta = mod.fit$coefficients, x = placekick$distance, Y = placekick$good)
+#   logL(mod.fit)
+
+#   Librerias 
+#   library(rgl)
+```
