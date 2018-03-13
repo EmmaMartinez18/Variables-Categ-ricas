@@ -1,0 +1,108 @@
+##    REPASO CLASE ANTERIOR
+
+placekick <- read.table(file ="C:/Users/USUARIO/Downloads/Placekick.csv", header = T, sep = ",")
+mod.fit <- glm(good ~ distance, binomial(link = logit), placekick) #  Modelo ajustado
+names(mod.fit) # Atributos asociados al objeto
+mod.fit$coefficients #  A medida que la distancia aumenta
+beta_0.hat <- mod.fit$coefficients[1]
+beta_1.hat <- mod.fit$coefficients[2]
+pi.hat <- mod.fit$fitted.values  #  Estimado de pi (vector de estimados de las probabilidades) (1 por cada observacion)
+
+length(pi.hat)
+length(mod.fit$residuals)
+head(mod.fit$residuals) 
+help() # Para que sirve cada atributo
+
+class(mod.fit)
+methods(class = lm) #   Funciones metodo con respecto al metodo
+methods(class = glm)
+
+summary(mod.fit)
+vcov(mod.fit) # matriz de covarianzas
+mod.fit2 <- glm(good ~ change + distance, binomial(link = logit), placekick) #logit - funcion de enlace la (como relacionamos probabilidad con las variables independientes)
+mod.fit2$coefficients
+vcov(mod.fit) #valores de beta 1 (distance)
+# Definir la funcion de verisimilud y despues se maximiza
+# Valores estamod de regresion (valores de verisimilitud)
+
+##    Funcion de , log-verosimilitud
+logL <- function(beta,x,Y){
+  pi <- exp(beta[1] + beta[2]*x)/ (1 + exp(beta[1] + beta[2]*x))
+  #   Alternative , could use exp(X%*%beta)/(1 + exp(X%*%beta)) # where X ir the desing matrix
+  sum(Y*log(pi) + (1-Y)*log(1-pi))
+}
+
+#   Evaluar la funcion de verisimulitud
+logL(mod.fit$coefficients, placekick$distance, placekick$good) # si resulto exitoso o no
+
+#   Forma de verificacion de la funcion de verisimilitud (Funcion de R)
+logLik(mod.fit)
+
+#   Dar valores iniciales para beta y despues ver los resultados de acuerdo al modelo
+reg.mod <- lm(good ~ distance, placekick)
+reg.mod$coefficients #  Proporciona los valores de b1 y b0
+
+#   Optimizacion de la funcion de los valores iniciales
+#   optmiza la Matriz hessian(segundas derivadas) 
+#   control - maximiza la funcion 
+mod.fit.optim <- optim(reg.mod$coefficients, logL, hessian = T, x = placekick$distance, Y = placekick$good, control = list(fnscale = -1), method = "BFGS")
+
+names(mod.fit.optim)
+
+# Estimados de los parametros
+mod.fit.optim$par # Optimacion de la fin de verisimilitud
+mod.fit$coefficients # Haciendo uso de lm 
+
+mod.fit.optim$convergence  # 0 convege y 1 caso contrario
+solve(mod.fit.optim$hessian)   # inversa de una matriz
+vcov(mod.fit)
+
+#   GRAFICA DE LA FUNCION VERISIMILITUD
+beta0.values <- seq(from = -5, to = 18, by = 0.1 )
+beta1.values <- seq(from = -0.65, to = 0.25, by = 0.01 )
+
+count <- 1
+save.logL <- numeric(length(beta0.values)*length(beta1.values))
+for (beta0 in beta0.values) {
+  for(beta1 in beta1.values) {
+    save.logL[count] <- logL(beta0 <- c(beta0, beta1), x = placekick$distance, Y = placekick$good)
+    count <- count +1
+  }
+}
+
+max (save.logL)
+library(rgl)
+open3d()
+
+#   GRAFICA CON CURVAS DE NIVEL
+
+
+
+
+########
+#   Redefiniendo los datos en forma binomial 
+#   Proporcion de exitos para cada distancia
+#   W observaciones
+w <- aggregate(good ~ distance, placekick, sum)
+n <- aggregate(good ~ distance, placekick, length)
+w.n <- data.frame(distance = w$distance, success = w$good, trails = n$good, proportion = round(w$good/n$good, 4))
+head(w.n)
+tail(w.n)
+
+mod.fit.bin <- glm(success/trails ~ distance, weights = trails, binomial(link = logit), w.n, trace = T) #   Estimados de los parametros de regresion
+summary(mod.fit.bin)
+
+install.packages("car")
+library(car) #  Sirve para hacer las pruebas de hipotesis
+#   Ajustar un modelo que incluya la variable "chance" y "distance"
+mod.fit2  <- glm(good ~ change + distance, binomial(link = logit), placekick)
+round(summary(mod.fit2)$coefficients, 4)  # Prueba de Wald
+Anova(mod.fit2, test.statistic ="Wald") # Con paqueteria car
+
+#   LRT
+Anova(mod.fit2, test = "LR") #  Con paqueteria car
+
+anova(mod.fit2, test = "Chisq")
+summary(mod.fit2)
+Anova(mod.fit2, test = "LR")
+#   La variable chance es de importancia para el modelo
