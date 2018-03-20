@@ -1,0 +1,123 @@
+---
+title: "Class 15"
+author: "EEMM"
+date: "20 de marzo de 2018"
+output: html_document
+---
+
+
+```{r}
+challenger <- read.table(file = "C:/Users/USUARIO/Downloads/challenger.csv", header=T, sep = ",")
+mod.fit.chal <- glm(O.ring ~ Temp + Pressure, family = binomial(link = logit), challenger)
+sega <- 0:8
+sega > 3
+mod.fit.chal <- glm(O.ring > 0 ~ Temp + Pressure, family = binomial(link = logit), challenger)
+mod.fit.chal <- glm(O.ring > 0 ~ Temp, family = binomial(link = logit), challenger)
+
+```
+
+
+```{r}
+placekick <- read.table(file = "C:/Users/USUARIO/Downloads/Placekick.csv", header=T, sep = ",")
+mod.fit.Ho <- glm(formula = good ~ distance + wind , family = binomial(link = logit), data = placekick )
+mod.fit.Ha <- glm(formula = good ~ distance + wind + distance:wind , family = binomial(link = logit), data = placekick )
+
+summary(mod.fit.Ha)
+anova(mod.fit.Ho, mod.fit.Ha, test = "Chisq") # Realiza la prueba de verosimilitud aproximacion a una chi-cuadrada
+```
+
+logit(pi) = 5.684 - 0.110 distance + 2.469 wind - 0.83 distance wind
+rechazar la Ho
+
+RAZON DE VERISIMILITUD
+Analysis of Deviance Table
+
+Model 1: good ~ distance + wind
+Model 2: good ~ distance + wind + distance:wind
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)  
+1      1422     772.53                       
+2      1421     767.42  1   5.1097  0.02379 *   ----------    INTERACCION ENTRE DISTANCIA Y TIEMPO
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+```{r}
+#   Razon de Monios (OR) para viento para una distancia especifica
+beta.hat <- mod.fit.Ha$coefficients[2:4] #  excluimos el primero o [-1]
+beta.hat
+
+c <- 1
+distance <- seq(20,60, by = 10) #segundo elemento: punto terminar, tercer elemento: incremento
+distance
+Or.wind <- exp(c*(beta.hat[2] + beta.hat[3]*distance)) #    OR estimado
+cov.mat <- vcov(mod.fit.Ha)[2:4, 2:4] #   Matriz de covarianza para beta^_1, beta^_2, beta^_3
+var.log.OR <- cov.mat[2,2] + distance^2*cov.mat[3,3] + 2*distance*cov.mat[2,3]
+
+#   Var(beta^_2 + distance*beta^_3)
+ci.log.OR.low <- c*(beta.hat[2] + beta.hat[3]*distance) - c*qnorm(p = 0.975)*sqrt(var.log.OR)
+ci.log.OR.up <- c*(beta.hat[2] + beta.hat[3]*distance) + c*qnorm(p = 0.975)*sqrt(var.log.OR)
+data.frame(Or.wind, OR.low = exp(ci.log.OR.low), Or.up = exp(ci.log.OR.up))
+t(distance)
+distance
+
+#   A una distancia  de 30 yardas, el viento no influye en la patada ya que el 1 se encuentra presente en el intervalo 
+cbind(distance, data.frame(Or.wind, Or.low = exp(ci.log.OR.low), OR.up = exp(ci.log.OR.up)))
+
+#   A mayor es la distancia mas suceptible es la patada por el viento
+round(data.frame(distance = distance, OR.hat = 1/Or.wind, OR.low = 1/exp(ci.log.OR.up), OR.up = 1/exp(ci.log.OR.low)),2)
+
+```
+
+q niveles
+q-1 indicadores
+
+Example 
+
+q = 4
+Niveles   X1  X2  X3
+A         0   0   0
+B         1   0   0
+C         0   1   0
+D         0   0   1
+
+log(pi) = B0 + B1 X1 + B2 X2 + B3 X3
+
+```{r}
+#   Proposito: No haya virus en la planta de tomato
+
+tomato <- read.table(file = "C:/Users/USUARIO/Downloads/TomatoVirus.csv", header=T, sep = ",")
+
+#   Variable categorica don 2 niveles: infest
+#   1: Plantas ya infectadas
+#   2: Plantas insectos portadores de virus
+
+#   Var. Categorica: Control
+#   C: Control quimico
+#   B: Control biologico (liberacion arañas)
+#   N: Ningun control
+
+levels(tomato$Control)
+#   Nivel de control biologico
+contrasts(tomato$Control) # 
+
+class(tomato$Infest)
+levels(tomato$Infest) # no arroja resultados pues tenemos valores enteros
+
+tomato$Infest <- factor(tomato$Infest) #    redefiniendo columna infest a valor factor
+class(tomato$Infest)
+levels(tomato$Infest)
+
+#   cuales desarrollaron sintomas
+mod.fit <- glm(formula = Virus8/Plants ~ Infest + Control, family = binomial(link = logit), tomato, weights = Plants )
+summary(mod.fit)
+
+#   Interpretacion
+#   ControlC cuando tenemos un control quimico la probabilidad de que desarrolle un virus decrece
+#   ControlN cuando no aplicamos control la probabilidad de que desarrolle virus crece
+```
+
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
