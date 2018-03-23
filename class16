@@ -1,0 +1,178 @@
+---
+title: "CLASS16"
+author: "EEMM"
+date: "23 de marzo de 2018"
+output: html_document
+---
+
+q niveles
+q-1 indicadores
+
+Example 
+
+q = 4
+
+Tabla de Codificacion: Represetacion de un objeto o matriz de contraste
+
+Niveles   X1  X2  X3
+A         0   0   0
+B         1   0   0
+C         0   1   0
+D         0   0   1
+
+logit(pi) = B0 + B1 X1 + B2 X2 + B3 X3
+
+```{r}
+tomato <- read.table(file = "C:/Users/USUARIO/Downloads/TomatoVirus.csv", header=T, sep = ",")
+
+#   Variable categorica de 2 niveles: infest
+#   1: Plantas ya infectadas
+#   2: Plantas insectos portadores de virus
+
+#   Var. Categorica: Control
+#   C: Control quimico
+#   B: Control biologico (liberacion arañas)
+#   N: Ningun control
+
+levels(tomato$Control)
+#   Nivel de control biologico
+contrasts(tomato$Control) # 
+
+class(tomato$Infest)
+levels(tomato$Infest) # no arroja resultados pues tenemos valores enteros
+
+tomato$Infest <- factor(tomato$Infest) #    redefiniendo columna infest a valor factor
+head(tomato)
+
+# R toma los niveles de manera alfabetica en variables categoricas
+
+class(tomato$Infest)
+levels(tomato$Infest)
+
+temp <- factor(tomato$Control, levels = c("C", "B", "N") ) #    Change ordering of levels like relevel
+levels(temp)
+
+temp2 <- factor(tomato$Control, levels = c("B1", "C1", "N1") ) #    Changes names of levels
+levels(temp2)
+
+#   cuales desarrollaron sintomas
+mod.fit <- glm(formula = Virus8/Plants ~ Infest + Control, family = binomial(link = logit), tomato, weights = Plants )
+summary(mod.fit)
+
+#   Interpretacion
+#   Infest2 La probabilidad de que la planta desarrolle mas sintomas es mas altas 
+#   ControlC cuando tenemos un control quimico la probabilidad de que desarrolle un virus decrece
+#   ControlN cuando no aplicamos control la probabilidad de que desarrolle virus crece
+
+#   logit(pi) = -0.6652 + 0.2196X1 - 0.7933X2 + 0.51520X3
+
+
+#   Comparacion del modelo
+#   Estimacion de un modelo que permite interacciones (infeccion y control)
+
+mod.fit.inter <- glm(formula = Virus8/Plants ~ Infest + Control + Infest:Control , family = binomial(link = logit), tomato, weights = Plants ) #    interacion entre metodo de infeccion y control 
+summary(mod.fit.inter)
+
+```
+
+EXAMPLE
+Supongamos
+
+X - 3 niveles
+Z - 3 niveles
+
+logit(pi) = logit(pi) = B0 + B1 X1 + B2 X2 + B3 Z1 + B4 Z2 + B5 X1 Z1 + B6 X1 Z2 + B7 X2 Z1 + B8 X2 Z2
+
+HO: No es necesario las interacciones, es decir, B5 = B6 = B7 = B8 = 0
+HO: Hay interacciones B5/= 0  | B6/= 0 | B7/= 0 | B8/= 0 (Puede que la mayoria sean 0 excepto uno)
+
+```{r}
+#   Comparacion de modelos
+
+library (car)
+Anova(mod.fit.inter) # Hace una Prueba LRT con Anova
+
+```
+
+Analysis of Deviance Table (Type II tests)
+
+Response: Virus8/Plants
+               LR Chisq Df Pr(>Chisq)    
+Infest            4.060  1     0.0439 *  
+Control          91.584  2  < 2.2e-16 ***
+Infest:Control   28.224  2  7.434e-07 *** - VALOR DEL ESTADISTICO - Rechaza la Ho es decir que hay interaccion entre las variables (Hay al menos uno factor diferente de 0)
+
+El metodo de infeccion pudiera afectar al metodo de control
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+----------------------------------------------------------------------------------------------------------------
+
+#   RAZON DE MOMIOS (PROBABILIDAD DE EXITO/FRACASO)
+Considerando:  logit(pi) = B0 + B1 X1 + B2 X2 + B3 X3
+
+Niveles   X1  X2  X3
+A         0   0   0
+B         1   0   0
+C         0   1   0
+D         0   0   1
+
+MOMIOS NIVEL A
+Odds_NA = EXP(B0)
+
+MOMIOS (Odds) NIVEL B
+Odds_NB = EXP(B0 + B1)   Ó    Odds_(x1 = 0, x2 = 1, x3 = 0) = EXP(B0 + B1) 
+
+MOMIOS EXITO B / EXITO A
+Odds_NA/Odds_NB = (EXP(B0 + B1)/EXP(B0)) = EXP(B1)
+
+MOMIOS EXITO B / EXITO C
+Odds_NB/Odds_NC = (EXP(B0 + B1)/EXP(B0 + B2)) = EXP(B1 - B2)
+
+#   INTERVALOS DE CONFIANZA PARA LA RAZON DE MOMIOS
+
+```{r}
+mod.fit #   No permite interacciones
+
+as.numeric(exp(mod.fit$coefficients[2])) #  Met. Infeccion 2 / Met. Infeccion 1
+#prob de desarrolar sintomas del virus crece si se utilizqa el metodo de infeccion 2
+
+
+as.numeric(1/exp(mod.fit$coefficients[2])) #  Met. Infeccion 1 / Met. Infeccion 2
+#prob de desarrolar sintomas del virus decrece si se utilizqa el metodo de infeccion 1
+
+attributes(mod.fit$coefficients[2])
+
+#   INTERVALO DE WALD
+
+exp(confint.default(object = mod.fit, parm = "Infest2", level = 0.95))
+
+#   95% de confianza los momios no son iguales
+#   Que los momios del metodo de infeccion 2 crecen con respecto a los momios de metodo de infeccion 1
+
+exp(confint.default(object = mod.fit, parm = "Infest1", level = 0.95))
+
+###   Con Interacciones (quimico, biologico o ninguno)
+
+exp(mod.fit$coefficients[3:4])
+
+#   Intervalo de Wald para dos elementos
+#   Quimico con respecto a ningun control
+
+exp(confint.default(object = mod.fit, parm = c("ControlC", "ControlN"), level = 0.95))
+
+#   DECRECE CUANDO SE UTILIZA EL CONTROL C ENTRE 0.3492898 0.5857982
+#   CUANDO NO SE UTILIZA NINGUN CONTROL LA INFECCION CRECE ENTRE 1.2941188 2.1654579
+
+beta.hat <- mod.fit$coefficients[-1]
+exp(beta.hat[3] - beta.hat[2])  #    B2 quimico y B3 ningun control
+
+cov.mat <- vcov(mod.fit)[2:4,2:4]
+var.N.C <- cov.mat[3,3] + cov.mat[2,2] - 2*cov.mat[3,2]
+  
+CI.betas <- beta.hat[3] - beta.hat[2] + qnorm(p = c(0.025, 0.975))*sqrt(var.N.C)
+exp(CI.betas)
+1/exp(CI.betas)
+
+```
+
