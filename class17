@@ -1,0 +1,60 @@
+X1 - Categorica con I niveles
+X2 - Continua
+
+X1 x x2
+
+--------
+
+X1 - Categorica con I niveles
+X2 - Categorica con J niveles
+
+EXAMPLE Part2 
+Supongamos
+
+X - 3 niveles   (A,B,C)
+Z - 3 niveles   (A,B,C)
+
+Niveles   A   B   C
+A         0   0   0
+B         1   0   0
+C         0   1   0
+
+
+OR para comparar el nivel B vs nivel C de X en el nivel B de z
+
+OR = (Odds_(x1=1,x2=0,z1=1,z2=0))/(Odss_(x1=1,x2=0,z1=1,z2=0)) 
+   =  exp(B0+B1+B3+B5)/exp(B0+B2+B3+B7)
+   =  exp(B1-B2+B5-B7)
+   
+   z        x         OR
+   ----------------------
+   A      B vs A      exp(B1)
+          c vs A      exp(B2)
+          B vs C      exp(B2-B1)
+   ----------------------
+   B      B vs A
+          c vs A
+          B vs C
+  -----------------------
+   C      B vs A
+          C vs A
+          A vs C
+          
+```{r}
+tomato <- read.csv("C:/Users/USUARIO/Downloads/TomatoVirus.csv",header=T, sep = ",")
+mod.fit.inter <- glm(formula = Virus8/Plants ~ Infest + Control + Infest:Control , family = binomial(link = logit), tomato, weights = Plants ) 
+ 
+#  OR estimada ára la varianle "Control"
+beta.hat <- mod.fit.inter$coefficients[-1]
+
+
+summary(mod.fit.inter)
+
+N.B.Infest2.0 <- exp(beta.hat[3]) # Infest2: no se aplica el metodo de infeccion 2 o se aplica en metodo de infeccion 1
+N.B.Infest2.1 <- exp(beta.hat[3] + beta.hat[5])
+N.C.Infest2.1 <- exp(beta.hat[3] - beta.hat[2])
+N.C.Infest2.1 <- exp()
+
+
+```
+
