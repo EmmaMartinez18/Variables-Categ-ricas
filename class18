@@ -1,0 +1,27 @@
+
+```{r}
+getwd()
+
+Placekick <- read.csv(file  = "C:/Users/USUARIO/Downloads/VARCAT/Placekick.csv")
+
+mod.fit <- glm(formula = good ~ distance , family = binomial(link = logit), data = Placekick, trace = T, epsilon = 0.0001, maxit = 50) # trace - por iteracion la desviacion residual, matiz - iteraciones
+
+mod.fit$control
+
+mod.fit <- glm(formula = good ~ distance , family = binomial(link = logit), data = Placekick, trace = T, epsilon = 0.0001, maxit = 3)
+```
+
+
+```{r}
+set1 <- data.frame(x1 = 1:10, y = c(0,0,0,0,0,1,1,1,1,1))
+set1
+
+mod.fit1 <- glm(y ~ x1, set1, family = binomial(link = logit), trace = T)
+x11(width = 10, height = 6, pointsize = 12)
+par(wfrow = c(1,2))
+plot(x = set1$y, main = "Grafica de set1", ylab = "Probabilidad Estimada", xlab = expression(x[1]), panel.first = grid(col = "gray", lty = "dotted"))
+curve(expr = predict(object = mod.fit1, newdata = data.frame(x1 = x), type = "response"), col = "red", add = TRUE, lwd = 2, n = 1000)
+
+# logistf
+```
+
