@@ -1,0 +1,122 @@
+Class
+G^{K} -> desviacion residual en la iteracion k
+(|G^{K}-G^{K+1}|)/(0.1 + |G^{K}|) < e
+
+```{r}
+set1 <- data.frame(x1 = 1:10, y = c(0,0,0,0,0,1,1,1,1,1))
+set1
+
+mod.fit1 <- glm(y ~ x1, set1, family = binomial(link = logit), trace = TRUE)
+
+names(mod.fit1)
+mod.fit1$coefficients
+
+```
+
+Cuando no se da la convergencia:
+Tomar una fn de verisimilitud modificada  (la idea es que la grafica no se comporte como en el modelo glm)
+Regresion logistica exacta
+
+En este caso utilizaremos la funcion de versimilitud
+
+```{r}
+x11(width = 10, height = 6, pointsize = 12)
+par(mfrow = c(1,2))
+
+plot(x = set1$x1, y = set1$y, main = "Grafica para set1", ylab = "Probabilidad Estimada", xlab = expression(x[1]), panel.first = grid(col = "gray", lty = "dotted"))
+
+curve(expr = predict(object = mod.fit1, newdata = data.frame(x1 = x), type = "response"), col = "red", add = TRUE, lwd = 2, n = 1)
+
+mod.fit1 <- glm(y ~ x1, set1, family = binomial(link = logit), trace = TRUE)
+
+install.packages("logistf")
+library(logistf)
+
+mod.fit.firth1 <- logistf(y ~ x1, data = set1)
+options(digits = 4)
+summary(mod.fit.firth1)
+names(mod.fit.firth1)
+
+data.frame(x = set1$x1, pi.hat = mod.fit.firth1$predict)
+
+```
+
+Estimado de la probabilidad pi.hat
+
+    x  pi.hat
+1   1 0.01252
+2   2 0.03238
+3   3 0.08116
+4   4 0.18908
+5   5 0.38100
+6   6 0.61900
+7   7 0.81092
+8   8 0.91884
+9   9 0.96762
+10 10 0.98748
+
+```{r}
+
+options(digits = 7)
+logistftest(object = mod.fit.firth1, test = ~ x1 - 1, values = 0)
+
+set2 <- data.frame(x1 = 1:10, y = c(0,0,0,0,0,1,1,1,1,1))
+set2
+
+beta.hat <- mod.fit.firth1$coefficients
+curve(expr = exp(beta.hat[1] + beta.hat[2]*x)/(1 + exp(beta.hat[1] + beta.hat[2]*x)), col = "blue", add = TRUE, n = 1000)
+legend(x = 0.5, y = 0.8, legend = c("glm()", "logistf()"), lty = c(1,1),  lwd = c(2,1), col = c("red", "blue"), bty = "n")
+
+```
+
+```{r}
+
+###################INCOMPLETO
+mod.fit2 <- glm(y ~ x1, set2, family = binomial(link = logit), trace = TRUE)
+mod.fit.firth2 <- logistf(y ~ x1, data = set2)
+beta.hat <- mod.fit.firth2
+
+plot(x = set2$x1, y = set2$y, main = "Grafica para set2", ylab = "Probabilidad Estimada", xlab = expression(x[1]), panel.first = grid(col = "gray", lty = "dotted"))
+curve(expr = predict(object = mod.fit2, newdata = data.frame(x1 = x), type = "response"), col = "red", add = TRUE, lwd = 2, n = 1)
+
+```
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+logit(pi) = B0 + B1*x con valor minimo 0 y valor maximo 1
+```{r}
+pi.x0 <- 0.01 
+beta0 <- log(pi.x0/(1 - pi.x0))
+beta0
+
+# Valor de beta1
+pi.x1 <- 0.99
+beta1 <- log(pi.x1/(1 - pi.x1)) - beta0
+beta1
+
+x11()
+curve(expr = exp(beta0 + beta1*x)/(1 + exp(beta0 + beta1*x)), xlim = c(0,1), ylab = expression(pi), n = 1000, lwd = 3, xlab = expression(x[1])) # lwd - ancho de la curva
+
+#   Tomamos un conjunto de datos aleatorios de una distribucion uniforme
+set.seed(8238)
+x1 <- runif(n = 500, min = 0, max = 1)
+pi <- exp(beta0 + beta1*x1)/(1 + exp(beta0 + beta1*x1))
+head(pi)
+
+set.seed(1829)                             
+y <- rbinom(n = length(x1), size = 1, prob = pi)                             
+head(data.frame(y, x1, pi), n = 10)
+
+
+mod.fit <- glm(y ~ x1, family = binomial(link = logit))
+mod.fit$coefficients
+
+beta0; beta1
+beta.hat0 <- mod.fit$coefficients[1]
+beta.hat0 <- mod.fit$coefficients[2]
+
+curve(expr = exp(beta.hat0 + beta.hat1*x)/(1 + exp(beta.hat0 + beta.hat1*x)), xlim = c(0,1), ylab = expression(pi), n = 1000, lwd = 3, xlab = expression(x[1]), add = TRUE, col = "red", n = 1000)
+
+legend(x = 0, y = 1, legend = c("verdadero", "Estimado"), lty = c(1,1), col = c("black", "red"), lwd = c(3,1), bty = "n")
+``` 
