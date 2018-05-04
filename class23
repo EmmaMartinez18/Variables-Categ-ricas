@@ -1,0 +1,77 @@
+##########################################################################################################
+# Tablas de contingencia ##################################################################################
+
+library(MASS)
+levels(diet$bloat)
+
+mod.fit.ord<-polr(formula = bloat ~ fiber, weights = count, data=diet, method = "logistic") #modelo de momios proporcionales
+summary(mod.fit.ord)
+
+
+#Coefficients:
+#  Value Std. Error t value
+#fiberbran -0.3859     0.7813  -0.494
+#fibergum   2.4426     0.8433   2.896
+#fiberboth  1.4235     0.7687   1.852
+
+#Intercepts:
+#  Value   Std. Error t value
+#none|low     0.0218  0.5522     0.0395
+#low|medium   1.6573  0.6138     2.7002
+#medium|high  3.0113  0.7249     4.1539
+
+#Residual Deviance: 112.2242 
+#AIC: 124.2242 
+
+
+#   logit(P(Y =< j)) = ´Bj0 + 0.3859 BRAN - 2.4426 GUM  - 1.4235 BOTH
+#   DONDE:
+#   ´B10 = 0.0218
+#   ´B20 = 1.6573
+#   ´B30 = 3.0113
+
+
+library(car)
+Anova(mod.fit.ord)  # LRT
+
+#HO: MODELO GENERAL 
+#VER CADA UNO DE LOS COEFICIENTES DEL MODELO
+#15.048 - ESTADISTICO (DICHO VALOR ES GRANDE POR LO QUE SE CONCLUYE LO SIGUIENTE)
+#HAY EVIDENCIA FUERTE DE ASOCIACION ENTRE SEVERIDAD DE LA INCHAZON Y EL TIPO FIBRA QUE SE CONSUME
+
+# ORs (EN ESTA PARTE SE VE QUE ELEMENTO ES EL QUE TIENE MAYOR INFLUENCIA)
+
+
+#fiberbran  fibergum fiberboth 
+#1.47      0.09      0.24                     #REDUCE LA SEVERIDAD  GUM 
+
+#fiberbran  fibergum fiberboth 
+#0.68     11.50      4.15                     
+
+round(exp(-coefficients(mod.fit.ord)), 2)
+round(1/exp(-coefficients(mod.fit.ord)), 2)
+
+conf.beta<-confint(object = mod.fit.ord, level = 0.95)
+ci<-exp(-conf.beta)
+round(data.frame(low = ci[,2], up = ci[,1]), 2)
+round(data.frame(low = 1/ci[,1], up = 1/ci[,2]), 2)
+
+#MOMIOS CON UNA INCHAZON MAS SEVERA
+#> round(data.frame(low = ci[,2], up = ci[,1]), 2)
+#           low   up
+#fiberbran 0.32 7.06
+#fibergum  0.02 0.43
+#fiberboth 0.05 1.05
+
+#> round(data.frame(low = 1/ci[,1], up = 1/ci[,2]), 2)
+#           low    up
+#fiberbran 0.14  3.15     NO HAY EVIDENCIA EN EL CAMBIO DE LA SEVERIDAD (NO HAY MAYOR EFECTO)
+#fibergum  2.32 65.01     TIENE UN EFECTO IMPORTANTE (TIENE MAYOR SEVERIDAD) 
+#fiberboth 0.95 19.82
+
+diet$fiber2<-relevel(x = diet$fiber, ref = "bran")
+mod.fit.ord2<-polr(formula = bloat ~ fiber2, weights = count, data=diet, method = "logistic")
+conf.beta2<-confint(object = mod.fit.ord2, level = 0.95)
+ci2<-exp(-conf.beta2)
+round(data.frame(low = ci2[,2], up = ci2[,1]), 2)
+round(data.frame(low = 1/ci2[,1], up = 1/ci2[,2]), 2)
