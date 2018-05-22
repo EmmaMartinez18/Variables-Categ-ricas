@@ -1,0 +1,134 @@
+---
+title: "class26"
+author: "EEMM"
+date: "22 de mayo de 2018"
+output: html_document
+---
+
+MODELO QUE PRESUPONE INDEPENDENCIA EN TRES VARIABLES
+MODELO DE INDEPENDENCIA MUTUA
+log(M) = B0 + B2^{X}*X2 + ... + BI^{X}*XI + B2^{Z}*Z2 + ... + BJ^{Z}*ZJ + B2^{W}*W2 + ... + BK^{W}*WK
+
+Ver si hay interacciones entre:   XZ, XW, ZW
+
+Modelo Corto de Independencia Mutua
+Si existe interacciones entonces nuestro modelo quedaria como:     
+      
+      log(M_{ijk}) = B0 + Bi^{x} + Bj^{z} + Bk^{w} + Bij^{xz} + Bij^{xw} + Bjk^{zw}     con k fijo
+
+RAZON DE MOMIOS
+
+      OR_{ii'jj'(k)} = (Mijk * Mi'j'k) / (Mi'jk * Mij'k)
+      
+      la razon de momios es constante o independiente de k
+      log(OR_{ii'jj'(k)}) = Bij^{xz} + Bi'j'^{xz} - Bi'j^{xz} - Bij'^{xz} 
+      
+      1. Ajuste del Modelo Independiente
+      2. Modelo de Asociacion Homogenea 
+      3. Modelo Saturado (xzw)
+      
+      
+```{r}
+alldate <- read.csv("C:/Users/USUARIO/Downloads/PolIdeolData.csv", sep = ",")
+
+#   Modelo Saturado: GPI
+mod.sat <- glm(count ~ gender*party*ideol, family = poisson(link = "log"), alldate)
+
+#   Modelo de Asociacion Homogenea: GP, GI, PI
+mod.hom <- glm(count ~ (gender + party + ideol)^2, family = poisson(link = "log"), alldate)
+
+#   Comparacion de mod.sat vs mod.hom
+anova(mod.hom, mod.sat, test = "Chisq")
+
+```
+
+Ho: Todos son iguales a 0
+Ha: No todos son igual a 0
+
+Analysis of Deviance Table
+
+Model 1: count ~ (gender + party + ideol)^2
+Model 2: count ~ gender * party * ideol
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)
+1         4     3.2454                     
+2         0     0.0000  4   3.2454   0.5176
+
+Que al menos el modelo de asosiacion homogenea es razonable
+por lo cual no hay evidencia suficiente para rechazar la hipotesis nula
+Modelo que solo considera asociacion PI: G, PI
+
+```{r}
+mod.hom.PI <- glm(count ~ gender + party*ideol, family = poisson(link = "log"), alldate)
+anova(mod.hom.PI, mod.hom, test = "Chisq")
+
+```
+
+
+Analysis of Deviance Table
+
+Model 1: count ~ gender + party * ideol
+Model 2: count ~ (gender + party + ideol)^2
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)  
+1         9    17.5186                       
+2         4     3.2454  5   14.273  0.01396 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+GP, GI - HOMOGENEA Ambas asociaciones no contribuyen al modelo de acuerdo a los datos observados 
+lo que implica PI se ajusta mejor al modelo
+
+```{r}
+#   Modelo de Independecia Mutua G, P, I
+mod.indep <- glm(count ~ gender + party + ideol, family = poisson(link = "log"), alldate)
+anova(mod.indep, mod.hom.PI, test = "Chisq")
+```
+Analysis of Deviance Table
+
+Model 1: count ~ gender + party + ideol
+Model 2: count ~ gender + party * ideol
+  Resid. Df Resid. Dev Df Deviance  Pr(>Chi)    
+1        13     79.851                          
+2         9     17.519  4   62.333 9.376e-13 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+El modelo de Independencia no ajusta bien al modelo de acuerdo al valor 9.376e-13  ya que es muy cercano a 0
+
+
+```{r}
+#   PRUEBA DE VERISIMILITUD
+round(summary(mod.hom)$coefficients, digits = 3)
+library(car)
+Anova(mod.hom)
+```
+
+Analysis of Deviance Table (Type II tests)
+
+Response: count
+             LR Chisq Df Pr(>Chisq)    
+gender         20.637  1  5.551e-06 ***
+party           0.528  1    0.46736    
+ideol         154.131  4  < 2.2e-16 ***
+gender:party    3.530  1    0.06026 .     
+gender:ideol    8.965  4    0.06198 .     
+party:ideol    60.555  4  2.218e-12 ***   variable de extrema importancia y que aporta informacion al modelo 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+-----------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
+RAZONES DE MOMIOS
+
+GP, GI y PI
+
+Para GP
+log(OR) = log((M_{MR}/N_{MD})/(M_{FR}/M_{FD}))
+        = B_{MR}^{GP} - B_{MD}^{GP} - B_{FR}^{GP} + B_{FD}^{GP}
+        = B_{MR}^{GP}
+        
+```{r}
+exp(0.276) #genderM:partyR     0.276      -       ser republicanos para hombres
+
+
+```
+
